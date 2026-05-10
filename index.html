@@ -3,117 +3,80 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fantasy Card Duel Online</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css">
-    <style>
-        body {
-            background: #1a1a2e;
-            color: #fff;
-            font-family: 'Palatino', serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            overflow-x: hidden;
-        }
-        #ui-layer {
-            width: 100%;
-            display: flex;
-            justify-content: space-around;
-            padding: 20px;
-            background: rgba(0,0,0,0.5);
-            border-bottom: 2px solid #d4af37;
-        }
-        .life-bar { font-size: 24px; }
-        .heart { color: #ff4d4d; text-shadow: 0 0 5px #000; }
-
-        #game-board {
-            width: 90%;
-            max-width: 800px;
-            margin-top: 20px;
-            text-align: center;
-        }
-
-        .pool-container, .slots {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            min-height: 150px;
-            padding: 15px;
-            background: rgba(255,255,255,0.05);
-            border-radius: 10px;
-            margin-bottom: 20px;
-        }
-
-        .card {
-            width: 80px;
-            height: 120px;
-            border-radius: 8px;
-            border: 2px solid #d4af37;
-            cursor: pointer;
-            position: relative;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            transition: transform 0.2s;
-            user-select: none;
-        }
-        .card:hover { transform: scale(1.05); }
-        .card.fire { background: linear-gradient(135deg, #800, #f20); }
-        .card.water { background: linear-gradient(135deg, #004, #04f); }
-        .card.grass { background: linear-gradient(135deg, #040, #0a0); }
-        
-        .card .val { font-size: 28px; font-weight: bold; }
-        .card .icon { font-size: 24px; }
-
-        .slot {
-            width: 85px;
-            height: 125px;
-            border: 2px dashed #666;
-            border-radius: 8px;
-        }
-
-        #battle-btn {
-            padding: 15px 40px;
-            font-size: 20px;
-            background: #d4af37;
-            color: #000;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-        #battle-btn:disabled { background: #555; cursor: not-allowed; }
-        
-        #status-msg { margin: 15px; font-style: italic; color: #aaa; }
-    </style>
+    <title>XP Card Battle</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <div id="ui-layer">
-        <div id="player-life" class="life-bar">YOU: <span class="heart">❤❤❤</span></div>
-        <div id="enemy-life" class="life-bar">ENEMY: <span class="heart">❤❤❤</span></div>
-    </div>
-
-    <div id="game-board">
-        <div id="status-msg">対戦相手を待っています...</div>
-
-        <h3>--- Card Pool ---</h3>
-        <div id="card-pool" class="pool-container"></div>
-
-        <h3>--- Your Formation (Left to Right) ---</h3>
-        <div id="player-slots" class="slots">
-            <div class="slot" data-idx="0"></div>
-            <div class="slot" data-idx="1"></div>
-            <div class="slot" data-idx="2"></div>
-            <div class="slot" data-idx="3"></div>
+<div id="xp-desktop">
+    <div id="setup-screen" class="window">
+        <div class="title-bar">
+            <div class="title-bar-text">Logon - Card Battle</div>
+            <div class="title-bar-controls">
+                <button aria-label="Close"></button>
+            </div>
         </div>
-
-        <button id="battle-btn" disabled>SET FORMATION</button>
+        <div class="window-body">
+            <p>Enter 4-digit Room ID to start:</p>
+            <input type="text" id="room-input" placeholder="0000" maxlength="4">
+            <div class="button-row">
+                <button id="join-btn">OK</button>
+            </div>
+        </div>
     </div>
 
-    <script type="module" src="cdgm.js"></script>
+    <div id="game-screen" class="window" style="display:none;">
+        <div class="title-bar">
+            <div class="title-bar-text">Card Battle Online - Room: <span id="current-room-id"></span></div>
+            <div class="title-bar-controls">
+                <button aria-label="Minimize"></button>
+                <button aria-label="Maximize"></button>
+                <button aria-label="Close"></button>
+            </div>
+        </div>
+        <div class="window-body">
+            <div id="ui-layer">
+                <div class="status-panel">
+                    YOU: <span class="life-count">3</span>
+                </div>
+                <div id="status-msg">Waiting...</div>
+                <div class="status-panel">
+                    ENEMY: <span class="life-count">3</span>
+                </div>
+            </div>
+
+            <div id="game-board">
+                <fieldset>
+                    <legend>Card Pool</legend>
+                    <div id="card-pool" class="pool-container"></div>
+                </fieldset>
+
+                <fieldset>
+                    <legend>Your Formation</legend>
+                    <div id="player-slots" class="slots">
+                        <div class="slot" data-idx="0"></div>
+                        <div class="slot" data-idx="1"></div>
+                        <div class="slot" data-idx="2"></div>
+                        <div class="slot" data-idx="3"></div>
+                    </div>
+                </fieldset>
+
+                <div class="button-row">
+                    <button id="battle-btn" disabled>BATTLE!</button>
+                </div>
+            </div>
+
+            <div class="chat-window">
+                <div id="chat-logs"></div>
+                <div class="chat-input-group">
+                    <input type="text" id="chat-input">
+                    <button id="chat-send">Send</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="module" src="cdgm.js"></script>
 </body>
 </html>
