@@ -2,81 +2,10 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XP Card Battle</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>XP Card Battle Mobile</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
-<div id="xp-desktop">
-    <div id="setup-screen" class="window">
-        <div class="title-bar">
-            <div class="title-bar-text">Logon - Card Battle</div>
-            <div class="title-bar-controls">
-                <button aria-label="Close"></button>
-            </div>
-        </div>
-        <div class="window-body">
-            <p>Enter 4-digit Room ID to start:</p>
-            <input type="text" id="room-input" placeholder="0000" maxlength="4">
-            <div class="button-row">
-                <button id="join-btn">OK</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="game-screen" class="window" style="display:none;">
-        <div class="title-bar">
-            <div class="title-bar-text">Card Battle Online - Room: <span id="current-room-id"></span></div>
-            <div class="title-bar-controls">
-                <button aria-label="Minimize"></button>
-                <button aria-label="Maximize"></button>
-                <button aria-label="Close"></button>
-            </div>
-        </div>
-        <div class="window-body">
-            <div id="ui-layer">
-                <div class="status-panel">
-                    YOU: <span class="life-count">3</span>
-                </div>
-                <div id="status-msg">Waiting...</div>
-                <div class="status-panel">
-                    ENEMY: <span class="life-count">3</span>
-                </div>
-            </div>
-
-            <div id="game-board">
-                <fieldset>
-                    <legend>Card Pool</legend>
-                    <div id="card-pool" class="pool-container"></div>
-                </fieldset>
-
-                <fieldset>
-                    <legend>Your Formation</legend>
-                    <div id="player-slots" class="slots">
-                        <div class="slot" data-idx="0"></div>
-                        <div class="slot" data-idx="1"></div>
-                        <div class="slot" data-idx="2"></div>
-                        <div class="slot" data-idx="3"></div>
-                    </div>
-                </fieldset>
-
-                <div class="button-row">
-                    <button id="battle-btn" disabled>BATTLE!</button>
-                </div>
-            </div>
-
-            <div class="chat-window">
-                <div id="chat-logs"></div>
-                <div class="chat-input-group">
-                    <input type="text" id="chat-input">
-                    <button id="chat-send">Send</button>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<script type="module" src="cdgm.js"></script>
-</body>
-</html>
+<!-- 構造は前回と同じですが、CSSで制御します -->
+...

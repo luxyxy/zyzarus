@@ -1,6 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
-import { getDatabase, ref, set, onValue, update, onDisconnect } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js";
+import { getDatabase, ref, set, onValue, update, onDisconnect, remove, push } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js";
 
+// --- Firebase Configuration ---
 const firebaseConfig = {
     apiKey: "AIzaSyBAOiPSwk157dCGxe9eM3iRmLTX0PXZWL4",
     authDomain: "cardgame1-cb2bb.firebaseapp.com",
@@ -14,151 +15,199 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// ゲーム変数
-let myRole = null; // player1 or player2
-let roomId = "global_room"; 
+// --- Game Variables ---
+let myRole = null;
+let roomId = "";
 let playerLife = 3;
 let enemyLife = 3;
 let myFormation = [];
-const CARD_TYPES = [
-    { name: 'fire', icon: '🔥' },
-    { name: 'water', icon: '💧' },
-    { name: 'grass', icon: '🌿' }
-];
+const CARD_TYPES = ['FIRE', 'WATER', 'GRASS'];
 
-// --- 1. 初期化とマッチング ---
-const roomRef = ref(db, `rooms/${roomId}`);
+// --- 1. Room Connection ---
+document.getElementById('join-btn').onclick = () => {
+    const input = document.getElementById('room-input').value;
+    if (input.length !== 4) {
+        alert("Please enter exactly 4 digits.");
+        return;
+    }
+    roomId = input;
+    initRoom();
+};
 
-onValue(roomRef, (snapshot) => {
-    const data = snapshot.val();
+function initRoom() {
+    const roomRef = ref(db, `rooms/${roomId}`);
     
-    if (!myRole) {
-        if (!data || !data.player1) {
-            myRole = 'player1';
-            set(ref(db, `rooms/${roomId}/player1`), { life: 3, status: 'waiting' });
-        } else if (!data.player2) {
-            myRole = 'player2';
-            update(ref(db, `rooms/${roomId}/player2`), { life: 3, status: 'waiting' });
-        } else {
-            alert("満員です。観戦モード（または別ID）が必要です。");
-            return;
+    // データ監視開始
+    onValue(roomRef, (snapshot) => {
+        const data = snapshot.val();
+        
+        // ロール（Player1/2）の割り当て
+        if (!myRole) {
+            if (!data || !data.player1) {
+                myRole = 'player1';
+                set(ref(db, `rooms/${roomId}/player1`), { life: 3, status: 'waiting' });
+            } else if (!data.player2) {
+                myRole = 'player2';
+                update(ref(db, `rooms/${roomId}/player2`), { life: 3, status: 'waiting' });
+            } else {
+                alert("Room is full.");
+                return;
+            }
+            // 接続が切れたら自分のデータを消去
+            onDisconnect(ref(db, `rooms/${roomId}/${myRole}`)).remove();
+            setupGameUI();
         }
-        // 切断時にデータを削除
-        onDisconnect(ref(db, `rooms/${roomId}/${myRole}`)).remove();
-    }
 
-    if (data) {
-        updateGameStatus(data);
-    }
-});
+        if (data) syncGameState(data);
+    });
 
-// --- 2. カード生成と操作 ---
+    // チャットの同期
+    onValue(ref(db, `rooms/${roomId}/chats`), (snapshot) => {
+        const logs = document.getElementById('chat-logs');
+        logs.innerHTML = '';
+        snapshot.forEach((child) => {
+            const msg = child.val();
+            const div = document.createElement('div');
+            div.className = 'chat-entry';
+            div.innerText = `[${msg.user}] ${msg.text}`;
+            logs.appendChild(div);
+        });
+        logs.scrollTop = logs.scrollHeight;
+    });
+}
+
+function setupGameUI() {
+    document.getElementById('setup-screen').style.display = 'none';
+    document.getElementById('game-screen').style.display = 'block';
+    document.getElementById('current-room-id').innerText = roomId;
+    createPool();
+}
+
+// --- 2. Card Mechanics ---
 function createPool() {
     const pool = document.getElementById('card-pool');
     pool.innerHTML = '';
+    myFormation = [];
+    document.querySelectorAll('.slot').forEach(s => s.innerHTML = '');
+    
     for (let i = 0; i < 6; i++) {
-        const typeObj = CARD_TYPES[Math.floor(Math.random() * CARD_TYPES.length)];
+        const type = CARD_TYPES[Math.floor(Math.random() * CARD_TYPES.length)];
         const val = Math.floor(Math.random() * 9) + 1;
+        
         const card = document.createElement('div');
-        card.className = `card ${typeObj.name}`;
-        card.innerHTML = `<span class="icon">${typeObj.icon}</span><span class="val">${val}</span>`;
-        card.onclick = () => selectCard(card, typeObj.name, val);
+        card.className = `card ${type.toLowerCase()}`;
+        card.innerHTML = `<div class="type-label">${type}</div><div class="val">${val}</div>`;
+        
+        card.onclick = () => selectCard(card, type, val);
         pool.appendChild(card);
     }
+    document.getElementById('battle-btn').disabled = true;
 }
 
 function selectCard(el, type, val) {
     if (myFormation.length >= 4) return;
     
     const slots = document.querySelectorAll('.slot');
-    const targetSlot = slots[myFormation.length];
-    
     myFormation.push({ type, val });
-    targetSlot.appendChild(el);
-    el.onclick = null; // 一度置いたら固定
-
+    
+    slots[myFormation.length - 1].appendChild(el);
+    el.onclick = null; // 配置後はクリック不可
+    
     if (myFormation.length === 4) {
         document.getElementById('battle-btn').disabled = false;
     }
 }
 
-// --- 3. バトル送信 ---
+// --- 3. Communication & Battle ---
 document.getElementById('battle-btn').onclick = () => {
     update(ref(db, `rooms/${roomId}/${myRole}`), {
         formation: myFormation,
         status: 'ready'
     });
     document.getElementById('battle-btn').disabled = true;
-    document.getElementById('status-msg').innerText = "相手の選択を待っています...";
+    document.getElementById('status-msg').innerText = "Waiting for Opponent...";
 };
 
-// --- 4. 同期と判定 ---
-function updateGameStatus(data) {
-    const me = data[myRole];
-    const opponentRole = myRole === 'player1' ? 'player2' : 'player1';
-    const opp = data[opponentRole];
+document.getElementById('chat-send').onclick = sendChatMessage;
+document.getElementById('chat-input').onkeypress = (e) => {
+    if (e.key === 'Enter') sendChatMessage();
+};
 
-    // ライフ更新
-    if (me) playerLife = me.life;
+function sendChatMessage() {
+    const input = document.getElementById('chat-input');
+    if (!input.value.trim()) return;
+    push(ref(db, `rooms/${roomId}/chats`), {
+        user: myRole,
+        text: input.value
+    });
+    input.value = '';
+}
+
+// --- 4. Logic & Cleanup ---
+function syncGameState(data) {
+    const me = data[myRole];
+    const oppRole = (myRole === 'player1') ? 'player2' : 'player1';
+    const opp = data[oppRole];
+
+    if (me) {
+        playerLife = me.life;
+        document.querySelector('#player-life .life-count').innerText = playerLife;
+    }
     if (opp) {
         enemyLife = opp.life;
-        document.getElementById('status-msg').innerText = "相手が接続中...";
+        document.querySelector('#enemy-life .life-count').innerText = enemyLife;
     }
-    
-    document.getElementById('player-life').querySelector('.heart').innerText = "❤".repeat(Math.max(0, playerLife));
-    document.getElementById('enemy-life').querySelector('.heart').innerText = "❤".repeat(Math.max(0, enemyLife));
 
-    // 両者Readyなら判定
+    // 両者が準備完了したら計算
     if (me?.status === 'ready' && opp?.status === 'ready') {
-        processBattle(me.formation, opp.formation);
+        const myScore = calculateTotal(me.formation);
+        const oppScore = calculateTotal(opp.formation);
+
+        let resultText = `YOU: ${myScore.toFixed(1)} vs ENEMY: ${oppScore.toFixed(1)}\n`;
+        let newLife = playerLife;
+
+        if (myScore > oppScore) {
+            resultText += "YOU WIN THIS ROUND!";
+        } else if (myScore < oppScore) {
+            resultText += "YOU LOSE THIS ROUND...";
+            newLife--;
+        } else {
+            resultText += "DRAW!";
+        }
+
+        alert(resultText);
+
+        // 決着判定
+        if (newLife <= 0 || (opp.life <= 0 && myScore > oppScore)) {
+            const finalMsg = newLife <= 0 ? "GAME OVER..." : "VICTORY!";
+            alert(finalMsg + "\nRoom data will be deleted.");
+            
+            // データを完全に削除してリロード
+            remove(ref(db, `rooms/${roomId}`)).then(() => {
+                location.reload();
+            });
+        } else {
+            // 次のターンへ
+            createPool();
+            update(ref(db, `rooms/${roomId}/${myRole}`), {
+                status: 'waiting',
+                formation: null,
+                life: newLife
+            });
+            document.getElementById('status-msg').innerText = "Pick 4 Cards";
+        }
     }
 }
 
-function processBattle(myF, oppF) {
-    const myScore = calculateScore(myF);
-    const oppScore = calculateScore(oppF);
+function calculateTotal(cards) {
+    let base = cards.reduce((sum, c) => sum + c.val, 0);
+    let multiplier = 1.0;
     
-    let resultMsg = `Result: YOU(${myScore}) vs ENEMY(${oppScore}) - `;
-    
-    if (myScore > oppScore) {
-        resultMsg += "WIN!";
-        enemyLife--;
-    } else if (myScore < oppScore) {
-        resultMsg += "LOSE...";
-        playerLife--;
-    } else {
-        resultMsg += "DRAW";
-    }
-
-    alert(resultMsg);
-
-    // ライフが0ならリセット
-    if (playerLife <= 0 || enemyLife <= 0) {
-        alert(playerLife <= 0 ? "GAME OVER" : "VICTORY!");
-        playerLife = 3;
-        enemyLife = 3;
-    }
-
-    // 状態リセット
-    myFormation = [];
-    document.querySelectorAll('.slot').forEach(s => s.innerHTML = '');
-    createPool();
-    
-    update(ref(db, `rooms/${roomId}/${myRole}`), {
-        status: 'waiting',
-        formation: null,
-        life: playerLife
-    });
-}
-
-function calculateScore(cards) {
-    let score = cards.reduce((sum, c) => sum + c.val, 0);
-    // 並び順ボーナス（隣り合う属性が同じなら+5）
+    // 同属性が並ぶとコンボ（左から順に判定）
     for (let i = 0; i < cards.length - 1; i++) {
-        if (cards[i].type === cards[i+1].type) score += 5;
+        if (cards[i].type === cards[i + 1].type) {
+            multiplier += 0.2; // 1つ並ぶごとに+20%
+        }
     }
-    return score;
+    return base * multiplier;
 }
-
-// 起動
-createPool();
