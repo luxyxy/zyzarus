@@ -3,110 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ZYZARUS - Online Card Battle</title>
+    <title>ZYZARUS</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <div id="xp-desktop">
-    
-    <!-- 1. ログイン（入室）画面 -->
+    <!-- Logon Screen -->
     <div id="setup-screen" class="window">
         <div class="title-bar">
-            <div class="title-bar-text">Logon - ZYZARUS</div>
-            <div class="title-bar-controls">
-                <button aria-label="Close"></button>
-            </div>
+            <div class="title-bar-text">ZYZARUS</div>
         </div>
-        <div class="window-body">
-            <div class="logon-content" style="text-align: center; padding: 20px;">
-                <h1 style="color: #003399; font-style: italic; margin-bottom: 20px;">ZYZARUS</h1>
-                <p>4桁のルームIDを入力してログインしてください：</p>
-                <div class="input-row" style="margin: 15px 0;">
-                    <input type="text" id="room-input" placeholder="0000" maxlength="4" style="padding: 5px; font-size: 18px; width: 100px; text-align: center;">
-                </div>
-                <div class="button-row">
-                    <button id="join-btn" style="min-width: 80px; font-weight: bold;">Login</button>
-                    <button onclick="location.reload()" style="min-width: 80px;">Cancel</button>
-                </div>
+        <div class="window-body" style="text-align: center; padding: 30px;">
+            <h1 style="color: #003399; font-size: 42px; margin: 0 0 20px 0; letter-spacing: 5px;">ZYZARUS</h1>
+            <input type="text" id="room-input" placeholder="ROOM ID" maxlength="4" style="font-size: 20px; width: 120px; text-align: center; border: 2px inset #888; padding: 5px;">
+            <div style="margin-top: 20px;">
+                <button id="join-btn" style="width: 100px; height: 30px; font-weight: bold;">Login</button>
             </div>
-        </div>
-        <div class="status-bar">
-            <p class="status-bar-field">Welcome to ZYZARUS Online</p>
         </div>
     </div>
 
-    <!-- 2. ゲームメイン画面 -->
+    <!-- Game Screen -->
     <div id="game-screen" class="window" style="display:none;">
         <div class="title-bar">
-            <div class="title-bar-text">ZYZARUS v1.0 - [Room: <span id="current-room-id"></span>]</div>
-            <div class="title-bar-controls">
-                <button aria-label="Minimize"></button>
-                <button aria-label="Maximize"></button>
-                <button aria-label="Close" onclick="location.reload()"></button>
-            </div>
+            <div class="title-bar-text">ZYZARUS</div>
+            <div class="title-bar-controls"><button aria-label="Close" onclick="location.reload()"></button></div>
         </div>
-
         <div class="window-body">
-            <!-- ライフ・ステータス表示エリア -->
             <div id="ui-layer">
-                <div class="status-panel">
-                    <strong>YOU</strong><br>
-                    HP: <span class="life-count">3</span>
-                </div>
-                <div id="status-msg" style="font-weight: bold; color: #003399;">Waiting...</div>
-                <div class="status-panel">
-                    <strong>ENEMY</strong><br>
-                    HP: <span class="life-count">3</span>
-                </div>
+                <div class="status-panel">YOU: <span class="life-count">3</span></div>
+                <div id="status-msg">CONNECTED</div>
+                <div class="status-panel">ENEMY: <span class="life-count">3</span></div>
             </div>
 
-            <div id="game-board">
-                <!-- カードプール -->
-                <fieldset>
-                    <legend>Available Cards (ZYZARUS Pool)</legend>
-                    <div id="card-pool" class="pool-container"></div>
-                </fieldset>
+            <fieldset><legend>POOL</legend><div id="card-pool" class="pool-container"></div></fieldset>
+            <fieldset><legend>FORMATION</legend><div id="player-slots" class="slots">
+                <div class="slot" data-idx="0"></div><div class="slot" data-idx="1"></div>
+                <div class="slot" data-idx="2"></div><div class="slot" data-idx="3"></div>
+            </div></fieldset>
 
-                <!-- 自分の布陣 -->
-                <fieldset>
-                    <legend>Battle Formation</legend>
-                    <div id="player-slots" class="slots">
-                        <div class="slot" data-idx="0"></div>
-                        <div class="slot" data-idx="1"></div>
-                        <div class="slot" data-idx="2"></div>
-                        <div class="slot" data-idx="3"></div>
-                    </div>
-                </fieldset>
+            <div class="button-row"><button id="battle-btn" disabled>SET FORMATION</button></div>
 
-                <!-- 実行ボタン -->
-                <div class="button-row">
-                    <button id="battle-btn" disabled style="padding: 10px 40px; font-size: 20px; color: #d00; font-weight: bold;">SET FORMATION</button>
+            <div class="chat-container" style="border: 1px solid #919B9C; background: #fff;">
+                <div id="chat-logs" style="height: 60px; overflow-y: scroll; padding: 5px; font-size: 11px;"></div>
+                <div style="display: flex; border-top: 1px solid #919B9C;">
+                    <input type="text" id="chat-input" style="flex:1; border:none; padding:4px;">
+                    <button id="chat-send" style="border:none; border-left:1px solid #919B9C; border-radius:0;">Send</button>
                 </div>
             </div>
-
-            <!-- チャットウィンドウ -->
-            <div class="chat-container" style="border: 1px solid #919B9C; background: #fff; margin-top: 10px;">
-                <div class="chat-header" style="background: #E0DFE3; padding: 2px 5px; font-size: 11px; border-bottom: 1px solid #919B9C;">ZYZARUS Messenger</div>
-                <div id="chat-logs" style="height: 70px; overflow-y: scroll; font-size: 12px; padding: 5px; background: #FFF;"></div>
-                <div class="chat-input-group" style="display: flex; border-top: 1px solid #919B9C;">
-                    <input type="text" id="chat-input" placeholder="メッセージを入力..." style="flex: 1; border: none; padding: 5px;">
-                    <button id="chat-send" style="border-radius: 0; border: none; border-left: 1px solid #919B9C;">Send</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- ウィンドウ下部のステータスバー -->
-        <div class="status-bar">
-            <p class="status-bar-field">ZYZARUS Network: Active</p>
-            <p class="status-bar-field">Player: <span id="my-role-display">Guest</span></p>
         </div>
     </div>
-
 </div>
-
-<!-- Firebaseロジック -->
 <script type="module" src="cdgm.js"></script>
-
 </body>
 </html>
