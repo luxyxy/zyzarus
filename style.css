@@ -1,128 +1,35 @@
-/* --- 基本ベース (PC/共通) --- */
-body {
-    margin: 0;
-    padding: 0;
-    background: #3a6ea5 url('https://upload.wikimedia.org/wikipedia/commons/7/7d/Bliss-600dpi.png') no-repeat center center fixed;
-    background-size: cover;
-    font-family: "Tahoma", sans-serif;
-    display: flex;
-    justify-content: center;
-    align-items: flex-start; /* スマホでスクロールしやすいように */
-    min-height: 100vh;
-}
-
-.window {
-    background: #ece9d8;
-    border: 3px solid #0055e5;
-    border-top-left-radius: 8px;
-    border-top-right-radius: 8px;
-    box-shadow: 2px 2px 10px rgba(0,0,0,0.5);
-    width: 95%;
-    max-width: 600px; /* PCではこの幅 */
-    margin-top: 20px;
-}
-
-.title-bar {
-    background: linear-gradient(180deg, #0058e6 0%, #3a91ff 10%, #0058e6 100%);
-    padding: 5px 10px;
-    display: flex;
-    justify-content: space-between;
-    color: white;
-    font-weight: bold;
-}
-
-/* --- カードレイアウト --- */
+/* PCでもスマホでもレイアウトを維持 */
 .pool-container, .slots {
     display: flex;
-    flex-wrap: wrap; /* スマホで入り切らない時に折り返す */
-    gap: 8px;
     justify-content: center;
+    gap: 8px;
     padding: 10px;
+    min-height: 110px; /* カードがなくなっても高さを維持 */
+    background: #d6d3c2;
+    border: 1px inset #fff;
+    flex-wrap: wrap;
 }
 
-.card {
-    width: 65px; /* スマホでも押しやすいサイズ */
+/* スロットとカードの幅を厳密に固定 */
+.slot, .card {
+    width: 65px;
     height: 95px;
-    border: 1px solid #000;
-    cursor: pointer;
-    background: #fff;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: space-around;
-    box-shadow: 2px 2px 0px #888;
+    flex-shrink: 0; /* 幅が勝手に縮まるのを防ぐ */
+    box-sizing: border-box;
 }
 
 .slot {
-    width: 70px;
-    height: 100px;
-    background: #d6d3c2;
-    border: 2px inset #fff;
-}
-
-/* --- UI要素 --- */
-#ui-layer {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 5px;
-    background: #d6d3c2;
-    padding: 5px;
-    border-bottom: 1px solid #919b9c;
-    font-size: 12px;
-}
-
-.button-row {
-    padding: 15px;
-    display: flex;
-    justify-content: center;
-}
-
-#battle-btn {
-    padding: 10px 30px;
-    font-size: 18px;
-    font-weight: bold;
-}
-
-/* --- チャット --- */
-.chat-window {
-    background: #fff;
+    background: #bdb9a6;
     border: 2px inset #888;
-    margin: 10px;
 }
 
-#chat-logs {
-    height: 80px;
-    overflow-y: auto;
-    font-size: 13px;
-    padding: 5px;
-    background: #fff;
+/* ウィンドウ自体の幅固定（PC時） */
+.window {
+    width: 600px; /* PCでの標準幅 */
+    max-width: 95vw; /* スマホでは画面に合わせる */
 }
 
-/* --- スマホ専用設定 (@media) --- */
 @media (max-width: 480px) {
-    .window {
-        width: 100%;
-        margin-top: 0;
-        border-radius: 0;
-        border-width: 2px;
-    }
-
-    .title-bar {
-        font-size: 14px;
-        padding: 8px;
-    }
-
-    .card {
-        width: 55px; /* 少し小さくして横に並びやすく */
-        height: 80px;
-    }
-
-    .slot {
-        width: 60px;
-        height: 85px;
-    }
-
-    .val {
-        font-size: 18px;
-    }
+    .window { width: 100vw; }
+    .card, .slot { width: 55px; height: 80px; }
 }
