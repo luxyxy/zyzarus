@@ -1,4 +1,69 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
+import { getDatabase, ref, set, onValue, update, onDisconnect, remove, push, get } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyBAOiPSwk157dCGxe9eM3iRmLTX0PXZWL4",
+    authDomain: "cardgame1-cb2bb.firebaseapp.com",
+    databaseURL: "https://cardgame1-cb2bb-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "cardgame1-cb2bb",
+    storageBucket: "cardgame1-cb2bb.firebasestorage.app",
+    messagingSenderId: "549281959353",
+    appId: "1:549281959353:web:449c4c510f7595db7cfa68"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+let myRole = null;
+let roomId = "";
+let myFormation = [];
+
+document.getElementById('join-btn').onclick = async () => {
+    roomId = document.getElementById('room-input').value;
+    if (roomId.length !== 4) return alert("Enter 4 digits.");
+
+    const roomRef = ref(db, `rooms/${roomId}`);
+    const snapshot = await get(roomRef);
+    const data = snapshot.val();
+
+    // マッチング判定
+    if (!data || !data.player1) {
+        myRole = 'player1';
+        await set(ref(db, `rooms/${roomId}/player1`), { life: 3, status: 'waiting' });
+    } else if (!data.player2) {
+        myRole = 'player2';
+        await update(ref(db, `rooms/${roomId}/player2`), { life: 3, status: 'waiting' });
+    } else {
+        alert("Room Full");
+        return;
+    }
+
+    // 入室成功後に監視を開始
+    onDisconnect(ref(db, `rooms/${roomId}/${myRole}`)).remove();
+    startListener();
+    setupGameUI();
+};
+
+function startListener() {
+    onValue(ref(db, `rooms/${roomId}`), (snapshot) => {
+        const data = snapshot.val();
+        if (data) syncGame(data);
+    });
+
+    onValue(ref(db, `rooms/${roomId}/chats`), (snapshot) => {
+        const logs = document.getElementById('chat-logs');
+        logs.innerHTML = '';
+        snapshot.forEach(child => {
+            const m = child.val();
+            logs.innerHTML += `<div><b>${m.user}:</b> ${m.text}</div>`;
+        });
+        logs.scrollTop = logs.scrollHeight;
+    });
+}
+
+// 以降の calculateTotal, createPool, selectCard 等は以前のロジックと同じ
+// ただし、syncGame 内で判定が終わった際に remove(ref(db, `rooms/${roomId}`)) を
+// 呼び出すことで、ルーム情報をきれいにリセットします。import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
 import { getDatabase, ref, set, onValue, update, onDisconnect, remove, push } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js";
 
 // --- Firebase Configuration ---
